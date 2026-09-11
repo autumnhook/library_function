@@ -1,28 +1,32 @@
 /*
  * drv_gpio.h
  *
- *  GPIO é©±åŠ¨å°è£…ï¼šè¾“å‡ºä¸è¾“å…¥ä¸¤ç»„æ¥å£ï¼Œå±è”½ HAL è°ƒç”¨ç»†èŠ‚ã€‚
+ *  GPIO Çı¶¯·â×°£ºÊä³öÓëÊäÈëÁ½×é½Ó¿Ú£¬ÆÁ±Î HAL µ÷ÓÃÏ¸½Ú¡£
  *
- *  ç‰¹æ€§ï¼š
- *    - é›¶é¢å¤–èµ„æºï¼Œç»“æ„ä½“ç”±è°ƒç”¨æ–¹æŒæœ‰ã€‚
- *    - è¾“å‡ºæ¥å£ä¸è¾“å…¥æ¥å£å„è‡ªç‹¬ç«‹çš„ç±»å‹ä¸å‡½æ•°ã€‚
- *    - æ‰€æœ‰æ¥å£å¯¹æœªåˆå§‹åŒ–å¯¹è±¡å®‰å…¨è¿”å›ï¼ˆå†™ï¼šå¿½ç•¥ï¼›è¯»ï¼šè¿”å› 0ï¼‰ã€‚
- *    - ä»…ä¾èµ– <stdint.h> <stdbool.h> ä¸ stm32f1xx_hal.hï¼ˆæŒ‰èŠ¯ç‰‡å‹å·è°ƒæ•´ï¼‰ã€‚
+ *  ÌØĞÔ£º
+ *    - Áã¶îÍâ×ÊÔ´£¬½á¹¹ÌåÓÉµ÷ÓÃ·½³ÖÓĞ¡£
+ *    - Êä³ö½Ó¿ÚÓëÊäÈë½Ó¿Ú¸÷×Ô¶ÀÁ¢µÄÀàĞÍÓëº¯Êı¡£
+ *    - ËùÓĞ½Ó¿Ú¶ÔÎ´³õÊ¼»¯¶ÔÏó°²È«·µ»Ø£¨Ğ´£ººöÂÔ£»¶Á£º·µ»Ø 0£©¡£
+ *    - Ìá¹©ÖĞĞÔË«Òı½Å»¥²¹Ğ´ drv_gpio_write_pair()£¬²»Éæ¼°·½Ïò/µç»úÓïÒå¡£
+ *    - ½öÒÀÀµ <stdint.h> <stdbool.h> Óë stm32f1xx_hal.h£¨°´Ğ¾Æ¬ĞÍºÅµ÷Õû£©¡£
  *
- *  ä½¿ç”¨å‰æï¼š
- *    1. è°ƒç”¨æ–¹éœ€å…ˆè°ƒç”¨å¯¹åº” initï¼Œå†ä½¿ç”¨ write / readã€‚
- *    2. HAL å±‚çš„ GPIO æ—¶é’Ÿä¸å¼•è„šæ¨¡å¼åº”ç”±è°ƒç”¨æ–¹åœ¨ init å‰å®Œæˆé…ç½®ã€‚
+ *  Ê¹ÓÃÇ°Ìá£º
+ *    1. µ÷ÓÃ·½ĞèÏÈµ÷ÓÃ¶ÔÓ¦ init£¬ÔÙÊ¹ÓÃ write / read¡£
+ *    2. HAL ²ãµÄ GPIO Ê±ÖÓÓëÒı½ÅÄ£Ê½Ó¦ÓÉµ÷ÓÃ·½ÔÚ init Ç°Íê³ÉÅäÖÃ¡£
  *
- *  ç¤ºä¾‹ï¼š
- *    // è¾“å‡ºï¼šåˆå§‹åŒ–å¹¶ç½®é«˜
+ *  Ê¾Àı£º
+ *    // Êä³ö£º³õÊ¼»¯²¢ÖÃ¸ß
  *    drv_gpio_t led;
  *    drv_gpio_init(&led, LED_GPIO_Port, LED_Pin);
  *    drv_gpio_write(&led, 1);
  *
- *    // è¾“å…¥ï¼šåˆå§‹åŒ–å¹¶è¯»å–
+ *    // ÊäÈë£º³õÊ¼»¯²¢¶ÁÈ¡
  *    drv_gpio_in_t key;
  *    drv_gpio_in_init(&key, KEY_GPIO_Port, KEY_Pin);
  *    uint8_t pressed = drv_gpio_in_read(&key);
+ *
+ *    // Ë«Òı½Å»¥²¹Ğ´£ºA=¸ß B=µÍ
+ *    drv_gpio_write_pair(GPIOA, GPIO_PIN_0, GPIO_PIN_1, true);
  */
 
 #ifndef DRV_GPIO_H
@@ -30,61 +34,73 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include "stm32f1xx_hal.h"   /* æ ¹æ®å®é™…èŠ¯ç‰‡å‹å·è°ƒæ•´ */
+#include "stm32f1xx_hal.h"   /* ¸ù¾İÊµ¼ÊĞ¾Æ¬ĞÍºÅµ÷Õû */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* ========== 1. è¾“å‡ºå°è£… ========== */
+/* ========== 1. Êä³ö·â×° ========== */
 
 typedef struct {
-    GPIO_TypeDef *port;      /* ç«¯å£ */
-    uint16_t      pin;       /* å¼•è„šå· */
-    bool          ready;     /* æ˜¯å¦å·²åˆå§‹åŒ– */
+    GPIO_TypeDef *port;      /* ¶Ë¿Ú */
+    uint16_t      pin;       /* Òı½ÅºÅ */
+    bool          ready;     /* ÊÇ·ñÒÑ³õÊ¼»¯ */
 } drv_gpio_t;
 
 /**
- * @brief åˆå§‹åŒ– GPIO è¾“å‡ºå¯¹è±¡ã€‚
- * @param g    GPIO è¾“å‡ºå¯¹è±¡æŒ‡é’ˆ
- * @param port GPIO ç«¯å£ï¼ˆå¦‚ GPIOAï¼‰
- * @param pin  GPIO å¼•è„šï¼ˆå¦‚ GPIO_PIN_5ï¼‰
- * @note  ä»…è®°å½• port/pin å¹¶ç½® readyï¼›ä¸å½±å“å¼•è„šç”µå¹³ã€‚
- * @note  g ä¸º NULL æ—¶ç›´æ¥è¿”å›ã€‚
+ * @brief ³õÊ¼»¯ GPIO Êä³ö¶ÔÏó¡£
+ * @param g    GPIO Êä³ö¶ÔÏóÖ¸Õë
+ * @param port GPIO ¶Ë¿Ú£¨Èç GPIOA£©
+ * @param pin  GPIO Òı½Å£¨Èç GPIO_PIN_5£©
+ * @note  ½ö¼ÇÂ¼ port/pin ²¢ÖÃ ready£»²»Ó°ÏìÒı½ÅµçÆ½¡£
+ * @note  g Îª NULL Ê±Ö±½Ó·µ»Ø¡£
  */
 void drv_gpio_init (drv_gpio_t *g, GPIO_TypeDef *port, uint16_t pin);
 
 /**
- * @brief å†™å…¥ GPIO è¾“å‡ºç”µå¹³ã€‚
- * @param g     GPIO è¾“å‡ºå¯¹è±¡æŒ‡é’ˆ
- * @param level 0=ä½ç”µå¹³ï¼Œé 0=é«˜ç”µå¹³
- * @note  æœªåˆå§‹åŒ–ï¼ˆg ä¸º NULL æˆ– ready=falseï¼‰æ—¶ç›´æ¥è¿”å›ã€‚
+ * @brief Ğ´Èë GPIO Êä³öµçÆ½¡£
+ * @param g     GPIO Êä³ö¶ÔÏóÖ¸Õë
+ * @param level 0=µÍµçÆ½£¬·Ç 0=¸ßµçÆ½
+ * @note  Î´³õÊ¼»¯£¨g Îª NULL »ò ready=false£©Ê±Ö±½Ó·µ»Ø¡£
  */
 void drv_gpio_write(drv_gpio_t *g, uint8_t level);
 
-/* ========== 2. è¾“å…¥å°è£… ========== */
+/**
+ * @brief Í¬Ò»¶Ë¿ÚĞ´Á½¸öÒı½Å£¬a_high ¾ö¶¨ a/b µÄ¸ßµÍ¡£
+ * @param port   GPIO ¶Ë¿Ú£¨Èç GPIOA£©
+ * @param pin_a  Òı½Å A
+ * @param pin_b  Òı½Å B
+ * @param a_high true: A=¸ß B=µÍ£»false: A=µÍ B=¸ß
+ * @note  ´¿ GPIO ÓïÒå£¬²»Éæ¼°¡°·½Ïò / µç»ú¡±º¬Òå¡£
+ * @note  port Îª NULL Ê±Ö±½Ó·µ»Ø¡£
+ */
+void drv_gpio_write_pair(GPIO_TypeDef *port, uint16_t pin_a,
+                         uint16_t pin_b, bool a_high);
+
+/* ========== 2. ÊäÈë·â×° ========== */
 
 typedef struct {
-    GPIO_TypeDef *port;      /* ç«¯å£ */
-    uint16_t      pin;       /* å¼•è„šå· */
-    bool          ready;     /* æ˜¯å¦å·²åˆå§‹åŒ– */
+    GPIO_TypeDef *port;      /* ¶Ë¿Ú */
+    uint16_t      pin;       /* Òı½ÅºÅ */
+    bool          ready;     /* ÊÇ·ñÒÑ³õÊ¼»¯ */
 } drv_gpio_in_t;
 
 /**
- * @brief åˆå§‹åŒ– GPIO è¾“å…¥å¯¹è±¡ã€‚
- * @param g    GPIO è¾“å…¥å¯¹è±¡æŒ‡é’ˆ
- * @param port GPIO ç«¯å£ï¼ˆå¦‚ GPIOBï¼‰
- * @param pin  GPIO å¼•è„šï¼ˆå¦‚ GPIO_PIN_3ï¼‰
- * @note  ä»…è®°å½• port/pin å¹¶ç½® readyï¼›ä¸æ”¹å˜å¼•è„šæ–¹å‘ä¸ä¸Šä¸‹æ‹‰ã€‚
- * @note  g ä¸º NULL æ—¶ç›´æ¥è¿”å›ã€‚
+ * @brief ³õÊ¼»¯ GPIO ÊäÈë¶ÔÏó¡£
+ * @param g    GPIO ÊäÈë¶ÔÏóÖ¸Õë
+ * @param port GPIO ¶Ë¿Ú£¨Èç GPIOB£©
+ * @param pin  GPIO Òı½Å£¨Èç GPIO_PIN_3£©
+ * @note  ½ö¼ÇÂ¼ port/pin ²¢ÖÃ ready£»²»¸Ä±äÒı½Å·½ÏòÓëÉÏÏÂÀ­¡£
+ * @note  g Îª NULL Ê±Ö±½Ó·µ»Ø¡£
  */
 void drv_gpio_in_init (drv_gpio_in_t *g, GPIO_TypeDef *port, uint16_t pin);
 
 /**
- * @brief è¯»å– GPIO è¾“å…¥ç”µå¹³ã€‚
- * @param g GPIO è¾“å…¥å¯¹è±¡æŒ‡é’ˆ
- * @return 1=é«˜ç”µå¹³ï¼Œ0=ä½ç”µå¹³
- * @note  æœªåˆå§‹åŒ–ï¼ˆg ä¸º NULL æˆ– ready=falseï¼‰æ—¶è¿”å› 0ï¼Œå³æŒ‰ä½ç”µå¹³å¤„ç†ã€‚
+ * @brief ¶ÁÈ¡ GPIO ÊäÈëµçÆ½¡£
+ * @param g GPIO ÊäÈë¶ÔÏóÖ¸Õë
+ * @return 1=¸ßµçÆ½£¬0=µÍµçÆ½
+ * @note  Î´³õÊ¼»¯£¨g Îª NULL »ò ready=false£©Ê±·µ»Ø 0£¬¼´°´µÍµçÆ½´¦Àí¡£
  */
 uint8_t drv_gpio_in_read(drv_gpio_in_t *g);
 
